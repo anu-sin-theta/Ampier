@@ -1,13 +1,9 @@
+from transformers import AutoTokenizer, pipeline
 import PyPDF2
 import pandas as pd
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
-import string
+from PIL import Image
+import pytesseract
 
-nltk.download('punkt')
-nltk.download('stopwords')
 
 
 def handle_input_file(file_path):
@@ -15,8 +11,12 @@ def handle_input_file(file_path):
         return handle_pdf(file_path)
     elif file_path.endswith('.csv') or file_path.endswith('.xlsx'):
         return handle_csv_excel(file_path)
+    elif file_path.endswith(('.png', '.jpg', '.jpeg')):
+        return handle_image_file(file_path)
+    elif file_path.endswith('.txt'):
+         return handle_text_file(file_path)
     else:
-        return "Unsupported file type"
+        print("File format not supported")
 
 
 def handle_pdf(file_path):
@@ -28,7 +28,6 @@ def handle_pdf(file_path):
         text += page_obj.extractText()
     pdf_file_obj.close()
     return text
-
 
 def handle_csv_excel(file_path):
     if file_path.endswith('.csv'):
@@ -43,20 +42,19 @@ def handle_text_file(file_path):
     file.close()
     return text
 
+def handle_image_file(file_path):
+    img = Image.open(file_path)
+    text = pytesseract.image_to_string(img)
+    return text
 
 def preprocess_text(text):
-    text = text.lower()
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    stop_words = set(stopwords.words('english'))
-    tokens = word_tokenize(text)
-    tokens = [i for i in tokens if not i in stop_words]
-    stemmer= PorterStemmer()
-    tokens = [stemmer.stem(word) for word in tokens]
+    text = str(text)
+    tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+    tokens = tokenizer.tokenize(text)
     return tokens
 
-
-file_path = input("Enter the file path: ")
-text = handle_input_file(file_path)
+# file_path = input("Enter the file path: ")
+text = handle_input_file("test.png") #ye bass test ke liye hai
 tokens = preprocess_text(text)
 print(tokens)
 # store the tokens in a file
